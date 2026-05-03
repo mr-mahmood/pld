@@ -62,6 +62,8 @@ class CharacterDetectionWorker(multiprocessing.Process):
             except Exception as e:
                 log(self.name, f"Unexpected error: {e} \n {traceback.format_exc()}")
 
+            time.sleep(0.02)
+            
         cv2.destroyAllWindows()
 
     def _process_track(self, detector: CharacterDetector, track_data: dict) -> None:

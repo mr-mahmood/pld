@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useActiveUser } from "@/src/contexts/active_user_context";
 import { canAccess } from "@/src/utils/role";
 import { robustFetch } from '@/src/utils/apiFetch';
+import { useEffect, useState } from 'react';
 
 function NavBar() {
     const pathname = usePathname();
@@ -13,6 +14,18 @@ function NavBar() {
     const shouldExpandParent = (basePath: string) => pathname.startsWith(basePath);
     const { setActiveUser, activeUser, getRoleInFarsi } = useActiveUser();
     const router = useRouter();
+
+    const [isSemiNav, setIsSemiNav] = useState(false);
+
+    // Update the useEffect in NavBar
+    useEffect(() => {
+        const savedState = localStorage.getItem('semi-nav-state');
+        if (savedState === 'true') {
+            setIsSemiNav(true);
+            document.querySelector('.vertical-sidebar')?.classList.add('semi-nav');
+        }
+    }, []);
+
 
     const profile_image_url = activeUser?.profile_image;
     const first_name = activeUser?.first_name;
@@ -33,6 +46,17 @@ function NavBar() {
         router.replace('/login');
     };
 
+    // Update toggleSemiNav function
+    const toggleSemiNav = () => {
+        const nav = document.querySelector('.vertical-sidebar');
+        if (nav) {
+            nav.classList.toggle('semi-nav');
+            const newState = nav.classList.contains('semi-nav');
+            setIsSemiNav(newState);
+            localStorage.setItem('semi-nav-state', String(newState));
+        }
+    };
+
     return (
         <nav className='vertical-sidebar'>
             <div className="app-logo">
@@ -46,7 +70,7 @@ function NavBar() {
                         <p className="text-muted f-s-15 mb-0">{role_name}</p>
                     </div>
 
-                    <div className="row" style={{columnGap: '20px'}}>
+                    <div className="row" style={{ columnGap: '20px' }}>
                         <div className="col-md-9 dropdown profile-menu-dropdown">
                             <a aria-expanded="false" data-bs-auto-close="true" data-bs-placement="top"
                                 data-bs-toggle="dropdown" role="button">
@@ -65,7 +89,11 @@ function NavBar() {
                             </ul>
                         </div>
                         <div className='col-md-3'>
-                            <span className="bg-light-primary toggle-semi-nav d-flex-center">
+                            <span
+                                className="bg-light-primary toggle-semi-nav d-flex-center"
+                                onClick={toggleSemiNav}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 <i className="ti ti-chevron-left"></i>
                             </span>
                         </div>

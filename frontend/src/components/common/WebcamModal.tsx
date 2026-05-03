@@ -114,6 +114,7 @@ const WebcamModal: React.FC<userDataImageProfileProps> = ({ userData, onUserUpda
                                     key="captured-image"
                                     src={capturedImage}
                                     alt="Captured Preview"
+                                    loading="lazy"
                                     style={{
                                         width: '100%',
                                         height: '100%',

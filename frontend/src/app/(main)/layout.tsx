@@ -7,6 +7,7 @@ import ProtectedRoute from "@/src/utils/ProtectedRoute";
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { LoadingSpinnerFullPage } from '@/src/components/common/LoadingSpinner';
+import SimpleBarInitializer from '@/src/components/common/SimpleBarInitializer';
 
 export default function RootLayout({ children, }: { children: React.ReactNode; }) {
 
@@ -44,6 +45,33 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
                 <link href="/css/responsive.css" rel="stylesheet" type="text/css" />
                 <link rel="stylesheet" href="/css/rtl.css" />
 
+                {/* ✅ Load jQuery FIRST with beforeInteractive */}
+                <Script
+                    src="/js/jquery-3.6.3.min.js"
+                    strategy="beforeInteractive"
+                />
+
+                {/* ✅ Load jQuery-dependent scripts AFTER with afterInteractive */}
+                <Script
+                    src="/vendor/simplebar/simplebar.js"
+                    strategy="afterInteractive"
+                />
+                <Script
+                    src="/vendor/phosphor/phosphor.js"
+                    strategy="afterInteractive"
+                />
+                <Script
+                    src="/vendor/bootstrap/bootstrap.bundle.min.js"
+                    strategy="afterInteractive"
+                />
+                <Script
+                    src="/js/theme.js"
+                    strategy="afterInteractive"
+                />
+                <Script
+                    src="/js/Script.js"
+                    strategy="afterInteractive"
+                />
 
                 <style></style>
             </head>
@@ -70,14 +98,8 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
                             </div>
                         </div>
                     </div>
-                    <Script src="/js/jquery-3.6.3.min.js"></Script>
-                    <Script src="/js/theme.js"></Script>
-                    <Script src="/vendor/simplebar/simplebar.js"></Script>
-                    <Script src="/js/simplebar.js"></Script>
-                    <Script src="/vendor/phosphor/phosphor.js"></Script>
-                    <Script src="/vendor/bootstrap/bootstrap.bundle.min.js"></Script>
-                    <Script src="/js/Script.js"></Script>
                 </ProtectedRoute>
+                <SimpleBarInitializer />
             </body>
         </html>
     );

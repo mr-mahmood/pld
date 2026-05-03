@@ -384,7 +384,6 @@ export default function UserLoginForm() {
                     </div>
                 </div>
                 <Script src="/vendor/bootstrap/bootstrap.bundle.min.js" />
-                <Script src="/js/count_down.js" />
             </body>
         </html>
     );

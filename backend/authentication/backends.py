@@ -3,7 +3,7 @@ from core.exceptions import APIError, UserAccountError
 from users.models import User
 
 
-class AdminManagerLoginBackend(BaseBackend):
+class CustomeLoginBackend(BaseBackend):
     def authenticate(self, request, employe_number=None, password=None, **kwargs):
         if not employe_number or not password:
             return None

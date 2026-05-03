@@ -99,7 +99,7 @@ DATABASES = {
 # -----------------------------
 AUTH_USER_MODEL = "users.User"
 AUTHENTICATION_BACKENDS = [
-    "authentication.backends.AdminManagerLoginBackend",
+    "authentication.backends.CustomeLoginBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 

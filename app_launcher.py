@@ -3,108 +3,162 @@ import signal
 import sys
 import os
 import time
-import json
-import tempfile
 import webbrowser
+import threading
 
 MAIN_APP_DIR = r"C:\mahmood\pld"
 shutdown_requested = False
+CUSTOM_URL = "http://localhost:3000/report/gate"
 
-# Or add any custom URL
-CUSTOM_URL = "http://localhost:3000/report/gate"     # Change this to your desired URL
+# Store all process objects
+processes = []
 
 def signal_handler(sig, frame):
     global shutdown_requested
     if shutdown_requested:
-        print("\nForce shutdown requested - Terminating all processes...")
+        print("\nForce shutdown - Killing everything...")
         force_shutdown()
     else:
         print("\n\n" + "="*50)
-        print("SHUTDOWN SEQUENCE INITIATED - Press Ctrl+C again for force shutdown")
+        print("SHUTTING DOWN... Press Ctrl+C again for force shutdown")
         print("="*50)
         shutdown_requested = True
         graceful_shutdown()
 
 def graceful_shutdown():
-    print("\n[1/2] Stopping Redis container...")
+    global processes
+    
+    print("\n[1/3] Stopping Redis container...")
     subprocess.run(["docker", "stop", "redis-container"], capture_output=True)
     subprocess.run(["docker", "rm", "redis-container"], capture_output=True)
     print("✓ Redis stopped")
     
-    print("[2/2] Closing Windows Terminal...")
-    subprocess.run(["taskkill", "/F", "/IM", "WindowsTerminal.exe"], capture_output=True)
-    print("✓ All tabs closed")
+    print("[2/3] Terminating all processes...")
+    # Kill all child processes
+    for proc in processes:
+        try:
+            proc.terminate()
+            print(f"  Terminated process: {proc.pid}")
+        except:
+            pass
+        
+        try:
+            proc.kill()
+            print(f"  Killed process: {proc.pid}")
+        except:
+            pass
     
+    # Also kill any remaining node, python, docker processes
+    subprocess.run("taskkill /F /IM node.exe", shell=True, capture_output=True)
+    subprocess.run("taskkill /F /IM python.exe", shell=True, capture_output=True)
+    subprocess.run("taskkill /F /IM cmd.exe", shell=True, capture_output=True)
+    
+    print("✓ All processes terminated")
+    
+    print("[3/3] Cleanup complete")
     print("\n" + "="*50)
     print("ALL APPLICATIONS SHUT DOWN SUCCESSFULLY!")
     print("="*50)
     sys.exit(0)
 
 def force_shutdown():
-    subprocess.run(["taskkill", "/F", "/IM", "WindowsTerminal.exe"], capture_output=True)
+    subprocess.run("taskkill /F /IM node.exe", shell=True, capture_output=True)
+    subprocess.run("taskkill /F /IM python.exe", shell=True, capture_output=True)
+    subprocess.run("taskkill /F /IM cmd.exe", shell=True, capture_output=True)
     subprocess.run(["docker", "rm", "-f", "redis-container"], capture_output=True)
     print("All processes killed!")
     sys.exit(1)
 
 def open_chrome_with_url(url, delay=5):
-    """Open Chrome with the specified URL after a delay"""
-    print(f"Will open Chrome to {url} in {delay} seconds...")
+    print(f"Opening Chrome to {url} in {delay} seconds...")
     time.sleep(delay)
-    
-    # Method 1: Using webbrowser module (opens default browser)
     webbrowser.open(url)
+
+def run_command_in_terminal(title, command, working_dir=None):
+    """Run a command in a new terminal window and return the process"""
+    if working_dir:
+        cmd = f'start "{title}" cmd /c "cd /d {working_dir} && {command} && pause"'
+    else:
+        cmd = f'start "{title}" cmd /c "{command} && pause"'
     
-    # Method 2: Specifically open Chrome (uncomment if you want Chrome specifically)
-    # chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-    # subprocess.Popen([chrome_path, url])
+    # Use CREATE_NEW_CONSOLE flag to create a new window
+    process = subprocess.Popen(
+        cmd,
+        shell=True,
+        creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0
+    )
+    return process
 
 def main():
+    global processes
     signal.signal(signal.SIGINT, signal_handler)
     
-    print("="*50)
-    print(f"Starting ALL applications from: {MAIN_APP_DIR}")
-    print("="*50)
-    print("\n[TIP] Press Ctrl+C to shutdown gracefully")
-    print("[TIP] Press Ctrl+C twice for force shutdown\n")
+    print("="*60)
+    print("🚀 STARTING APPLICATION LAUNCHER")
+    print("="*60)
+    print(f"📁 Directory: {MAIN_APP_DIR}")
+    print("\n⚠️  PRESS Ctrl+C TO CLOSE ALL TERMINALS AND SHUTDOWN ⚠️")
+    print("="*60 + "\n")
     
-    # Build Windows Terminal command with multiple tabs
-    wt_command = [
-        "wt",
-        "new-tab", "--title", "Redis", "cmd", "/k", f"docker run --rm --name redis-container -p 6379:6379 redis",
-        ";",
-        "new-tab", "--title", "Frontend", "cmd", "/k", f"cd /d {MAIN_APP_DIR}\\frontend && npm run dev",
-        ";",
-        "new-tab", "--title", "Django", "cmd", "/k", f"cd /d {MAIN_APP_DIR}\\backend && python manage.py runserver",
-        ";",
-        "new-tab", "--title", "Vision", "cmd", "/k", f"cd /d {MAIN_APP_DIR} && python -m vision.main"
-    ]
+    # Start Redis (runs directly, no new window needed since it's Docker)
+    print("[1/4] Starting Redis...")
+    redis_process = subprocess.Popen(
+        ["docker", "run", "--rm", "--name", "redis-container", "-p", "6379:6379", "redis"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+    processes.append(redis_process)
+    print(f"   Redis started with PID: {redis_process.pid}")
+    time.sleep(3)
     
-    # Start Windows Terminal with all tabs
-    print("[1/5] Starting Redis...")
-    print("[2/5] Starting Frontend...")
-    print("[3/5] Starting Django...")
-    print("[4/5] Starting Vision...")
+    # Start Django
+    print("[2/4] Starting Django...")
+    django_process = subprocess.Popen(
+        f'start "Django" cmd /c "cd /d {MAIN_APP_DIR}\\backend && python manage.py runserver"',
+        # f'start "Django" cmd /c "cd /d {MAIN_APP_DIR}\\backend && python manage.py runserver 0.0.0.0:8000"',
+        shell=True
+    )
+    processes.append(django_process)
+    print(f"   Django started")
+    time.sleep(3)
     
-    subprocess.Popen(wt_command, shell=True)
+    # Start Frontend
+    print("[3/4] Starting Frontend...")
+    frontend_process = subprocess.Popen(
+        f'start "Frontend" cmd /c "cd /d {MAIN_APP_DIR}\\frontend && npm run dev"',
+        shell=True
+    )
+    processes.append(frontend_process)
+    print(f"   Frontend started")
+    time.sleep(3)
     
-    # Open Chrome after a delay (wait for servers to start)
-    print("[5/5] Preparing to open Chrome...")
+    # Start Vision
+    print("[4/4] Starting Vision...")
+    vision_process = subprocess.Popen(
+        f'start "Vision" cmd /c "cd /d {MAIN_APP_DIR} && python -m vision.main"',
+        shell=True
+    )
+    processes.append(vision_process)
+    print(f"   Vision started")
     
-    # You can choose when to open Chrome
-    # Option A: Open after all servers start (recommended)
-    threading.Thread(target=open_chrome_with_url, args=(CUSTOM_URL, 1), daemon=True).start()
+    # Open browser
+    print("\n[5/5] Opening browser...")
+    threading.Thread(target=open_chrome_with_url, args=(CUSTOM_URL, 5), daemon=True).start()
     
+    print("\n" + "="*60)
+    print("✅ ALL SYSTEMS OPERATIONAL")
+    print("="*60)
+    print(f"🌐 Browser will open to: {CUSTOM_URL}")
+    print(f"📊 Tracking {len(processes)} processes")
+    print("🔴 PRESS Ctrl+C TO CLOSE EVERYTHING 🔴")
+    print("="*60 + "\n")
     
-    print("\n" + "="*50)
-    print("ALL APPS STARTED in Windows Terminal tabs!")
-    print("="*50)
-    print(f"\n🌐 Chrome will open to {CUSTOM_URL} automatically in a few seconds")
-    print("📌 Press Ctrl+C in THIS window to shutdown all apps\n")
-    
-    # Keep the script running
-    while True:
-        time.sleep(1)
+    # Keep alive
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        signal_handler(signal.SIGINT, None)
 
 if __name__ == "__main__":
-    import threading
     main()

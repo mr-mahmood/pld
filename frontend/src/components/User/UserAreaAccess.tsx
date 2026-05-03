@@ -8,7 +8,7 @@ import { Area } from "@/src/types/area";
 import { UserData } from "@/src/types/userData";
 import { LoadingSpinnerFullPage } from '@/src/components/common/LoadingSpinner';
 import ErrorCard from "@/src/components/common/ErrorConnectToBackend";
-import UserInfoCard from "@/src/components/common/UserInfoCard";
+import UserInfoCard from "@/src/components/User/UserInfoCard";
 import NoDataError from "../common/NoDataError";
 
 interface UserAreaProps {

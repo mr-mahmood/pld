@@ -76,13 +76,13 @@ $(document).on('click', '.menu-next', function (e) {
   }
 })
 
-$(function () {
-    setUpHorizontalHeader();
-  let themeMode = localStorage.getItem('theme-mode', 'light')
-    setTimeout(() => {
-    $('body').addClass(`${themeMode}`)
-  }, 1500);
-});
+// $(function () {
+//     setUpHorizontalHeader();
+//   let themeMode = localStorage.getItem('theme-mode', 'light')
+//     setTimeout(() => {
+//     $('body').addClass(`${themeMode}`)
+//   }, 1500);
+// });
 
 
 // >>-- 02 Flag  Icon Js --<<
@@ -111,17 +111,6 @@ function copyvalue() {
   temp.remove();
   console.timeEnd('time2');
 }
-
-
-
-// >>-- 04 Sidebar toggle js --<<
-$(document).on('click', '.header-toggle', function () {
-  $("nav").toggleClass("semi-nav");
-});
-$(".toggle-semi-nav").on("click", function () {
-  $("nav").removeClass("semi-nav");
-});
-
 
 // >>-- 05 List page js --<<
 const $window = $(window);
@@ -254,30 +243,6 @@ function myFunction() {
         appElement.style.display = "none";
         $buttonCode.html("");
     }
-}
-
-
-// >>-- 11 Dark mode js --<<
-
-const themeToggle = document.querySelector(".header-dark");
-
-if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-        document.querySelector(".sun-logo")?.classList.toggle("sun");
-        document.querySelector(".moon-logo")?.classList.toggle("moon");
-
-        const isDark = document.body.classList.contains("dark");
-        document.body.classList.toggle("dark", !isDark);
-        document.body.classList.toggle("light", isDark);
-        localStorage.setItem('theme-mode', isDark ? 'light' : 'dark');
-    });
-}
-function appendHtml() {
-  let div = document.getElementsByClassName('app-wrapper');
-  div.innerHTML += '<p>This is some HTML code</p>';
-}
-window.onload = function () {
-  appendHtml();
 }
 
 // >>-- 12 Close on click js --<<

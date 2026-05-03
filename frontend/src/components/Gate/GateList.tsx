@@ -7,6 +7,7 @@ import { Area } from '@/src/types/area';
 import FilterSidebar from "@/src/components/common/FilterSidebar";
 import FilterModal from './GateFilterModal';
 import NoDataError from '../common/NoDataError';
+import AreaInfoCard from '../Area/AreaInfoCard';
 
 interface GateListProps {
     area: Area;
@@ -193,7 +194,13 @@ export default function GateList({ area, gates, setGates, onEdit }: GateListProp
     return (
         <>
             <div className="row">
-                <div className="col-lg-12">
+                <div className="col-lg-3">
+                    <AreaInfoCard
+                        height="77vh"
+                        area={area}
+                    />
+                </div>
+                <div className="col-lg-9">
                     <div className="card hover-effect b-r-25">
                         <div className="card-header">
                             <div className="about-list">
@@ -288,8 +295,8 @@ export default function GateList({ area, gates, setGates, onEdit }: GateListProp
                                         {(() => {
                                             if (gates.length === 0) {
                                                 return (
-                                                    <NoDataError 
-                                                    message="هیچ گیتی برای این محوطه ساخته نشده است"
+                                                    <NoDataError
+                                                        message="هیچ گیتی برای این محوطه ساخته نشده است"
                                                     />
                                                 );
                                             }

@@ -81,7 +81,7 @@ export default function PasswordChangeForm() {
             new_password: newPassword,
             new_password2: confirmPassword,
         };
-    
+
         try {
             const response = await robustFetch({
                 url: `api/auth/password/change/`,

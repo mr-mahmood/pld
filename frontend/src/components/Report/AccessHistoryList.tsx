@@ -453,6 +453,7 @@ export default function AccessHistoryList({ onModalOpen }: AccessHistoryListProp
                                                                     <img
                                                                         src={access.generated_image}
                                                                         alt={`Car plate`}
+                                                                        loading="lazy"
                                                                         style={{
                                                                             width: '350px',
                                                                             objectFit: 'cover',

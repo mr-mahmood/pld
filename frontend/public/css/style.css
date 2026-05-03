@@ -42341,13 +42341,13 @@ body.dark nav .app-logo .logo img {
 
 .about-list-label {
   text-align: start;
-  font-weight: 500;
-  font-size: 16px;
+  font-weight: 400;
+  font-size: 14px;
   white-space: nowrap;
 }
 
 .about-list-value {
-  font-size: 16px;
+  font-size: 14px;
   text-align: end;
   word-break: break-word;
   overflow-wrap: break-word;

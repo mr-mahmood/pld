@@ -8,7 +8,7 @@ import { Car } from "@/src/types/car";
 import { UserData } from "@/src/types/userData";
 import { LoadingSpinnerFullPage } from '@/src/components/common/LoadingSpinner';
 import ErrorCard from "@/src/components/common/ErrorConnectToBackend";
-import UserInfoCard from "@/src/components/common/UserInfoCard";
+import UserInfoCard from "@/src/components/User/UserInfoCard";
 import NoDataError from "../common/NoDataError";
 
 interface UserCarsProps {
@@ -243,6 +243,7 @@ const UserCarsList: React.FC<UserCarsProps> = ({ UserData, onEdit }) => {
                                                                 <img
                                                                     src={car.image}
                                                                     alt={`Car plate: ${car.plate}`}
+                                                                    loading="lazy"
                                                                     style={{
                                                                         width: '350px',
                                                                         objectFit: 'cover',

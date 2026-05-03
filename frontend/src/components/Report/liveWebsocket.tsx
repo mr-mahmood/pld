@@ -1,12 +1,17 @@
 "use client";
 
+import { API_BASE_URL } from "@/config/index";
 import { Gate } from "@/src/types/gate";
+import { useRouter } from 'next/navigation';
 import { useActiveUser } from "@/src/contexts/active_user_context";
 import { Area } from "@/src/types/area";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AccessHistory } from "@/src/types/accessHistory";
 
 export default function GateReport() {
+    const router = useRouter();
+    const [hasError, setHasError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const { activeUser } = useActiveUser();
 
     // Flatten all gates from all areas with area context
@@ -31,7 +36,7 @@ export default function GateReport() {
     const carouselInstancesRef = useRef<Map<number, any>>(new Map());
 
     // Maximum number of events to keep per gate
-    const MAX_EVENTS_PER_GATE = 20;
+    const MAX_EVENTS_PER_GATE = 50;
 
     const handleGateClick = useCallback((gateId: number) => {
         console.log(`Gate ID: ${gateId}`);
@@ -86,6 +91,7 @@ export default function GateReport() {
 
         socket.onopen = () => {
             console.log(`✅ WebSocket connected for gate ${gateId}`);
+            setHasError(false);
             connectingGatesRef.current.delete(gateId);
             webSocketsRef.current.set(gateId, socket);
         };
@@ -98,6 +104,40 @@ export default function GateReport() {
             });
             webSocketsRef.current.delete(gateId);
             connectingGatesRef.current.delete(gateId);
+
+            // Handle specific error codes from backend
+            switch(event.code) {
+                case 4000:
+                    setHasError(true);
+                    setErrorMessage('نیاز به احراز هویت مجدد');
+                    router.prefetch('/login');
+                    fetch(`${API_BASE_URL}/api/auth/logout/`, {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        credentials: 'include',
+                    }).catch(error => {
+                        console.error("Error during logout fetch:", error instanceof Error ? error.message : String(error));
+                    }).finally(() => {
+                        setTimeout(() => {
+                            router.push('/login');
+                        }, 3000);
+                    });
+                    break;
+                case 4001:
+                    setHasError(true);
+                    setErrorMessage('در ارتباط با گیت مدنظر شما مشکلی وجود دارد');
+                    break;
+                case 4002:
+                    setHasError(true);
+                    setErrorMessage('گیت مدنظر یافت نشد یا غیرفعال است');
+                    break;
+                case 4003:
+                    setHasError(true);
+                    setErrorMessage('شما اجازه این کار را ندارید');
+                    break;
+                default:
+                    break;
+            }
         };
 
         socket.onerror = (err) => {
@@ -169,17 +209,10 @@ export default function GateReport() {
     const formatPersianDate = (timestamp: string) => {
         try {
             const date = new Date(timestamp);
-            return date.toLocaleDateString('fa-IR') + ' ' + date.toLocaleTimeString('fa-IR') ;
+            return date.toLocaleTimeString('fa-IR') + ' ' + date.toLocaleDateString('fa-IR') ;
         } catch {
             return 'تاریخ نامعتبر';
         }
-    };
-
-    // Helper function to get user role (handles null)
-    const { getRoleInFarsi } = useActiveUser();
-    const getUserRole = (user: any) => {
-        if (!user) return "ناشناس";
-        return getRoleInFarsi(user.role);
     };
 
     return (
@@ -192,25 +225,30 @@ export default function GateReport() {
                     <div className="card-body">
                         <div className="vertical-tab setting-tab">
                             <ul className="nav nav-tabs tab-light-info m-0 flex-column" id="v-bg" role="tablist">
-                                {gatesWithArea.map(({ gate, area }) => (
-                                    <li className="nav-item w-100 mb-2" key={gate.id} role="presentation">
-                                        <button
-                                            aria-controls={`tab-${gate.id}`}
-                                            aria-selected={selectedGate?.gate.id === gate.id}
-                                            className={`nav-link b-r-25 w-100 text-start ${selectedGate?.gate.id === gate.id ? 'active' : ''}`}
-                                            data-bs-target={`#tab-${gate.id}-pane`}
-                                            data-bs-toggle="tab"
-                                            id={`tab-${gate.id}`}
-                                            role="tab"
-                                            type="button"
-                                            onClick={() => handleGateClick(gate.id)}
-                                        >
-                                            <i className="ph-bold ph-door pe-2"></i>
-                                            {gate.name} ({area.name})
-                                        </button>
-                                    </li>
-                                ))}
-
+                                {gatesWithArea.map(({ gate, area }) => {
+                                    if (gate.is_active && area.is_active) {
+                                        return (
+                                            <li className="nav-item w-100 mb-2" key={gate.id} role="presentation">
+                                                <button
+                                                    aria-controls={`tab-${gate.id}`}
+                                                    aria-selected={selectedGate?.gate.id === gate.id}
+                                                    className={`nav-link b-r-25 w-100 text-start ${selectedGate?.gate.id === gate.id ? 'active' : ''}`}
+                                                    data-bs-target={`#tab-${gate.id}-pane`}
+                                                    data-bs-toggle="tab"
+                                                    id={`tab-${gate.id}`}
+                                                    role="tab"
+                                                    type="button"
+                                                    onClick={() => handleGateClick(gate.id)}
+                                                >
+                                                    <i className="ph-bold ph-door pe-2"></i>
+                                                    {gate.name} ({area.name})
+                                                </button>
+                                            </li>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                                
                                 {gatesWithArea.length === 0 && (
                                     <li className="nav-item">
                                         <div className="alert alert-info m-3">
@@ -256,41 +294,6 @@ export default function GateReport() {
                                     </span>
                                 </div>
                                 <div className="about-list-item">
-                                    <span className="about-list-label">
-                                        <i className="ti ti-camera"></i> دوربین:
-                                    </span>
-                                    <span className="about-list-value">
-                                        {selectedGate.gate.camera || 'ندارد'}
-                                    </span>
-                                </div>
-                                <div className="about-list-item">
-                                    <span className="about-list-label">
-                                        <i className="ti ti-circle-check"></i> نقش:
-                                    </span>
-                                    <div style={{ justifySelf: "end" }}>
-                                        {(() => {
-                                            if (selectedGate.gate.role === "ENTERY") {
-                                                return (
-                                                    <span className="badge text-light-cyan b-r-25 f-s-17">
-                                                        <i className="ti ti-door-enter"></i> ورودی
-                                                    </span>
-                                                );
-                                            } else if (selectedGate.gate.role === "EXIT") {
-                                                return (
-                                                    <span className="badge text-light-dark-orange b-r-25 f-s-17">
-                                                        <i className="ti ti-door-exit"></i> خروجی
-                                                    </span>
-                                                );
-                                            } else if (selectedGate.gate.role === "SURVEILLANCE") {
-                                                return (
-                                                    <span className="badge text-light-see-blue b-r-25 f-s-17">
-                                                        <i className="ti ti-device-computer-camera"></i> نظارت
-                                                    </span>
-                                                );
-                                            }
-                                            return null;
-                                        })()}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -301,102 +304,128 @@ export default function GateReport() {
             {/* Right Content Area - Scrollable Events */}
             <div className="col-md-9 cards-scrollable" style={{ height: '86vh' }}>
                 {currentGateEvents.length === 0 ? (
-                    <></>
+                    <>
+                    {hasError &&
+                        <div className="row">
+                            <div className="col-md-6 col-xxl-4">
+                            </div>
+                            <div className="col-md-6 col-xxl-4">
+                                <div className="card overflow-hidden b-s-6-danger">
+                                    <div className="card-body">
+                                        <i className="ti ti-alert-circle f-s-60 text-danger" style={{display: 'block' ,textAlign: 'center'}}></i>
+                                        <h4 className="text-danger text-center">مشکلی به وجود آمد</h4>
+                                        <p className="text-muted mb-0 text-center">{errorMessage}</p>
+                                        {errorMessage.includes('احراز هویت') && (
+                                            <div className="mt-1 text-center">
+                                                <span className="text-muted small"> در حال انتقال به صفحه ورود </span>
+                                                <div className="spinner-border spinner-border-sm text-muted me-2" role="status">
+                                                    <span className="visually-hidden"> در حال انتقال </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <img alt="توضیحات تصویر" className="card-img-bottom mt-0" src="/images/background/error.jpg" />
+                                </div>
+                            </div>
+                            <div className="col-md-6 col-xxl-4">
+                            </div>
+                        </div>
+                    }
+                    </>
                 ) : (
                     <div className="row">
-                        {currentGateEvents.map((event) => (
-                            <div className="col-md-4 mb-0" key={event.id}>
-                                <div className={`card book-mark-card hover-effect b-r-25 ${event.status === 'ALLOWED' ? 'b-s-4-success' : 'b-s-4-danger'}`}>
-                                    <div className={`card-body`}>
-                                        {/* Original Image */}
-                                        {event.original_image && (
-                                            <div className="mb-1">
-                                                <img
-                                                    alt="تصویر اصلی"
-                                                    className="w-100 d-block b-r-25"
-                                                    src={event.original_image}
-                                                    style={{ border: '2px solid #ddd' }}
-                                                    loading="lazy"
-                                                />
-                                                <div className="text-center mt-1">
-                                                    <small className="text-muted">تصویر اصلی</small>
+                            {currentGateEvents.map((event) => (
+                                <div className="col-md-4 mb-0 mt-1" key={event.id}>
+                                    <div className={`card book-mark-card hover-effect b-r-25 ${event.status === 'ALLOWED' ? 'b-s-6-success' : 'b-s-6-danger'}`}>
+                                        <div className={`card-body`}>
+                                            {/* Original Image */}
+                                            {event.original_image && (
+                                                <div className="mb-1">
+                                                    <img
+                                                        alt="تصویر اصلی"
+                                                        className="w-100 d-block b-r-25"
+                                                        src={event.original_image}
+                                                        loading="lazy"
+                                                        />
+                                                    <div className="text-center mt-1">
+                                                        <small className="text-muted">تصویر اصلی</small>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {/* Generated Image */}
-                                        {event.generated_image && (
-                                            <div className="mb-0">
-                                                <img
-                                                    alt="پلاک تشخیص داده شده"
-                                                    className="w-100 d-block"
-                                                    src={event.generated_image}
-                                                    loading="lazy"
-                                                />
-                                                <div className="text-center mt-1">
-                                                    <small className="text-muted">پلاک تشخیص داده شده</small>
+                                            {/* Generated Image */}
+                                            {event.generated_image && (
+                                                <div className="mb-0">
+                                                    <img
+                                                        alt="پلاک تشخیص داده شده"
+                                                        className="w-100 d-block"
+                                                        src={event.generated_image}
+                                                        loading="lazy"
+                                                        />
+                                                    <div className="text-center mt-1">
+                                                        <small className="text-muted">پلاک تشخیص داده شده</small>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {/* Info Section */}
-                                        <div className="about-list">
-                                            {/* Single row item */}
-                                            <div className="row" style={{ width: '100% ' }}>
-                                                {event.status === 'ALLOWED' ? (
-                                                    <span className="badge float-end text-light-success b-r-25 f-w-500 f-s-16 mt-0 mb-1">دسترسی مجاز</span>
-                                                ) : (
-                                                    <span className="badge float-end text-light-danger b-r-25 f-w-500 f-s-16 mt-0 mb-1">دسترسی غیر مجاز</span>
-                                                )}
-                                            </div>
+                                            {/* Info Section */}
+                                            <div className="about-list">
+                                                {/* Single row item */}
+                                                <div className="row" style={{ width: '100% ' }}>
+                                                    {event.status === 'ALLOWED' ? (
+                                                        <span className="badge float-end text-light-success b-r-25 f-w-500 f-s-16 mt-0 mb-1">دسترسی مجاز</span>
+                                                    ) : (
+                                                        <span className="badge float-end text-light-danger b-r-25 f-w-500 f-s-16 mt-0 mb-1">دسترسی غیر مجاز</span>
+                                                    )}
+                                                </div>
 
-                                            {/* Row 1: Name and Employee Code */}
-                                            <div className="about-list-row" style={{ borderTop: '1px solid #dee2e6', paddingTop: '0.5rem' }}>
-                                                <span className="label-col">نام:</span>
-                                                <span className="value-col">
-                                                    {event.user?.first_name || event.user?.last_name ?
-                                                        `${event.user?.first_name || ''} ${event.user?.last_name || ''} (${getUserRole(event.user)})`.trim()
-                                                        :
-                                                        '---'
-                                                    }
-                                                </span>
-                                                <span className="separator-col">|</span>
-                                                <span className="label-col" >کد پرسنلی:</span>
-                                                <span className="value-col">
-                                                    {event.user?.employe_number || '---'}
-                                                </span>
-                                            </div>
+                                                {/* Row 1: Name */}
+                                                <div className="about-list-item" style={{ borderTop: '1px solid #dee2e6', paddingTop: '0.5rem' }}>
+                                                    <span className="about-list-label f-s-15">مالک:</span>
+                                                    <span className="about-list-value">
+                                                        {event.user?.first_name || event.user?.last_name 
+                                                            ? `${event.user?.first_name || ''} ${event.user?.last_name || ''}`.trim()
+                                                            : '---'
+                                                        }
+                                                    </span>
+                                                </div>
 
-                                            {/* Row 2: Area and Gate */}
-                                            <div className="about-list-row">
-                                                <span className="label-col">محوطه:</span>
-                                                <span className="value-col">
-                                                    {event.area?.name || '---'}
-                                                </span>
-                                                <span className="separator-col">|</span>
-                                                <span className="label-col">گیت:</span>
-                                                <span className="value-col">
-                                                    {event.gate?.name || '---'}
-                                                </span>
-                                            </div>
+                                                {/* Row 2: Area and Gate*/}
+                                                <div className="about-list-item">
+                                                    <span className="about-list-label">محوطه:</span>
+                                                    <span className="about-list-value">
+                                                        {event.area?.name || event.gate?.name 
+                                                            ? `${event.area?.name  || ''} ( ${event.gate?.name} )`.trim()
+                                                            : '---'
+                                                        }
+                                                    </span>
+                                                </div>
 
-                                            {/* Row 3: Date and Confidence */}
-                                            <div className="about-list-row">
-                                                <span className="label-col">تاریخ:</span>
-                                                <span className="value-col">
+                                                {/* Row 3: Date and Confidence */}
+                                                <div className="about-list-item">
+                                                    <span className="about-list-label">تاریخ:</span>
+                                                    <span className="about-list-value">
+                                                        {formatPersianDate(event.timestamp)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Row 3: Date and Confidence */}
+                                                {/* <div className="about-list-row">
+                                                    <span className="label-col">تاریخ:</span>
+                                                    <span className="value-col">
                                                     {formatPersianDate(event.timestamp)}
-                                                </span>
-                                                <span className="separator-col">|</span>
-                                                <span className="label-col">اطمینان:</span>
-                                                <span className="value-col">
+                                                    </span>
+                                                    <span className="separator-col">|</span>
+                                                    <span className="label-col">اطمینان:</span>
+                                                    <span className="value-col">
                                                     {event.confidence != null ? `% ${Math.round(event.confidence * 100)}` : '---'}
-                                                </span>
+                                                    </span>
+                                                    </div> */}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 )}
             </div>

@@ -125,6 +125,7 @@ export default function ProfileImageUploader({ UserData }: ProfileImageUploaderP
                                 <img
                                     key={preview || 'default'}
                                     src={preview || ''}
+                                    loading="lazy"
                                     alt="Profile Picture Preview"
                                     className="rounded-circle"
                                 />
