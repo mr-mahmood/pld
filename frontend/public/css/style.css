@@ -333,15 +333,6 @@ body.dark .tooltip-inner {
   color: #ffffff !important;
 }
 
-/*! -----------------------------------------------------------------------------------
-
-    Template Name: ki-admin Admin
-    Template URI: http://admin.la-themes.com/ki-admin/theme
-    Description: This is Admin theme
-    Author: la-themes
-    Author URI: https://themeforest.net/user/la-themes
-
------------------------------------------------------------------------------------
 /*  01 variables css
 /*  02 reboot css
 
@@ -12905,6 +12896,10 @@ nav .app-nav .main-nav>li:not(.menu-title) ul li {
   text-overflow: ellipsis;
 }
 
+.last-li {
+  margin-bottom: 0.5rem;
+}
+
 nav .app-nav .main-nav>li:not(.menu-title) ul li:hover {
   color: rgba(var(--primary), 1);
   background: rgba(var(--primary), 0.1);
@@ -18759,14 +18754,6 @@ button:focus:not(:focus-visible) {
   background-color: rgba(var(--secondary), 0.1);
   color: rgba(var(--secondary), 1);
   font-size: 10px;
-}
-
-.toastify {
-  border-radius: var(--bs-border-radius);
-}
-
-.toastify .toast-close {
-  padding-left: 0.75rem;
 }
 
 .scroll-list-group {

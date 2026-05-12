@@ -18,6 +18,7 @@ jdp-overlay {
 }
 
 jdp-container {
+    z-index: 9999 !important;
     -moz-animation: jdpOpenAnimation .3s cubic-bezier(.23, 1, .32, 1);
     -webkit-animation: jdpOpenAnimation .3s cubic-bezier(.23, 1, .32, 1);
     animation: jdpOpenAnimation .3s cubic-bezier(.23, 1, .32, 1);

@@ -852,12 +852,6 @@ ol.categories-list {
     right: unset
 }
 
-.toastify .toast-close {
-    padding-right: .75rem;
-    padding-left: unset;
-    float: left
-}
-
 .app-form .floating-form label {
     right: 16px;
     left: unset

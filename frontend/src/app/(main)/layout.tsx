@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { LoadingSpinnerFullPage } from '@/src/components/common/LoadingSpinner';
 import SimpleBarInitializer from '@/src/components/common/SimpleBarInitializer';
+import ToastContainer from '@/src/components/common/toastify/CustomToast';
 
 export default function RootLayout({ children, }: { children: React.ReactNode; }) {
 
@@ -45,13 +46,6 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
                 <link href="/css/responsive.css" rel="stylesheet" type="text/css" />
                 <link rel="stylesheet" href="/css/rtl.css" />
 
-                {/* ✅ Load jQuery FIRST with beforeInteractive */}
-                <Script
-                    src="/js/jquery-3.6.3.min.js"
-                    strategy="beforeInteractive"
-                />
-
-                {/* ✅ Load jQuery-dependent scripts AFTER with afterInteractive */}
                 <Script
                     src="/vendor/simplebar/simplebar.js"
                     strategy="afterInteractive"
@@ -100,6 +94,7 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
                     </div>
                 </ProtectedRoute>
                 <SimpleBarInitializer />
+                <ToastContainer />
             </body>
         </html>
     );

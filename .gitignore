@@ -486,3 +486,5 @@ $RECYCLE.BIN/
 ./media/*
 
 *.mp4
+
+dataset/

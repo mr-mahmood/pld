@@ -9,7 +9,7 @@ from typing import Dict, List
 from copy import deepcopy
 from dotenv import load_dotenv
 from vision.utils import log
-from vision.ai_models.plate_detection import PlateDetector
+from vision.models.plate.plate_detection import PlateDetector
 from vision.ByteTrack_wrapper import ByteTrackWrapper
 
 load_dotenv()
@@ -65,13 +65,14 @@ class PlateTrackBuffer:
 
         
 class PlateDetectionWorker(multiprocessing.Process):
-    def __init__(self, gates_list, share_memory, stop_event, queue, worker_id, width, height, fps):
+    def __init__(self, gates_list, share_memory, stop_event, queue, save_queue, worker_id, width, height, fps):
         super().__init__(name=f"Plate Detection Worker-{worker_id}", daemon=False)
         self.gates_list = gates_list
         self.share_memory = share_memory
         self.stop_event = stop_event
         self.worker_id = worker_id
         self.output_queue = queue
+        self.save_queue = save_queue
 
         # Per‑gate components
         self.gate_trackers: Dict[str, ByteTrackWrapper] = {}
@@ -87,7 +88,7 @@ class PlateDetectionWorker(multiprocessing.Process):
         self.track_max_age = float(os.getenv("TRACK_MAX_AGE", 10))  # seconds
         
         # Quality thresholds
-        self.min_plate_width = int(os.getenv("MIN_PLATE_WIDTH", 75))
+        self.min_plate_width = int(os.getenv("MIN_PLATE_WIDTH", 50))
         self.roi_margin = float(os.getenv("ROI_MARGIN", 0.05))
 
         # Initialise per gate
@@ -238,6 +239,9 @@ class PlateDetectionWorker(multiprocessing.Process):
             
             # Track which tracks got updated this frame 
             updated_tids = set()
+            
+            # Collect all valid bboxes for this frame to save together
+            valid_bboxes_for_frame = []  # List of (bbox, track_id, score)
 
             # Process active tracks
             for box in tracked_boxes:
@@ -272,10 +276,16 @@ class PlateDetectionWorker(multiprocessing.Process):
 
                 if is_valid:
                     full = plate_tracks[tid].add_valid_frame(full_jpeg_bytes, current_bbox)
+                    # Collect bbox for frame-level saving
+                    valid_bboxes_for_frame.append((current_bbox, tid, score))
                     if full:
                         self._finalize_and_cleanup(plate_tracks[tid], plate_tracks, cache)
                 else:
                     plate_tracks[tid].touch()
+
+            # Save once per frame with all bboxes
+            if valid_bboxes_for_frame:
+                self._add_save_task_batch(full_jpeg_bytes, valid_bboxes_for_frame, gate_id)
 
             # Touch tracks not updated this frame 
             for tid, track in plate_tracks.items():
@@ -347,3 +357,33 @@ class PlateDetectionWorker(multiprocessing.Process):
                         self._finalize_and_cleanup(track, plate_tracks, self.gate_finalized_cache[gate_id])
                     else:
                         del plate_tracks[tid]
+        
+    # -----------------------------------------------------------------
+    # put task for save
+    # -----------------------------------------------------------------
+    def _add_save_task_batch(self, frame, bboxes_with_info, gate_id):
+        """
+        Save a single frame with multiple plate bounding boxes.
+        
+        Args:
+            frame: JPEG bytes of the full frame
+            bboxes_with_info: List of tuples [(bbox, track_id, score), ...]
+            gate_id: Gate identifier
+        """
+        # Extract just the bboxes for saving
+        bboxes = [bbox_info[0] for bbox_info in bboxes_with_info]
+        
+        payload = {
+            "image": frame,
+            "bboxes": bboxes,  # List of bboxes instead of single bbox
+            "gate_id": gate_id,
+            "image_shape": (self.frame_height, self.frame_width),
+        }
+        
+        try:
+            self.save_queue.put(payload, timeout=0.5)
+            log(self.name, f"Queued frame with {len(bboxes)} plates for gate {gate_id}")
+        except queue.Full:
+            log(self.name, "Save queue full, dropping batch")
+                        
+                        

@@ -127,7 +127,9 @@ function NavBar() {
                             <ul className={`collapse ${shouldExpandParent('/report') ? "show" : ""}`} id="reports">
                                 <li className={isChildActive('/report/all') ? 'active' : ''}><Link href="/report/all" prefetch={true}>گزارشات کلی برخط</Link></li>
                                 <li className={isChildActive('/report/gate') ? 'active' : ''}><Link href="/report/gate" prefetch={true}>گزارش گیت برخط</Link></li>
-                                <li className={isChildActive('/report/history') ? 'active' : ''}><Link href="/report/history" prefetch={true}>گزارشات گذشته</Link></li>
+
+                                {/* add a margin bottom for last li */}
+                                <li className={isChildActive('/report/history') ? 'last-li active' : 'last-li'}><Link href="/report/history" prefetch={true}>گزارشات گذشته</Link></li>
                             </ul>
                         </li>
                     )}
@@ -153,7 +155,9 @@ function NavBar() {
                                 </svg>کارمندان
                             </Link>
                             <ul className={`collapse ${shouldExpandParent('/users') ? "show" : ""}`} id="users">
-                                <li className={isChildActive('/users') ? 'active' : ''}><Link href="/users">لیست کارمندان</Link></li>
+
+                                {/* add a margin bottom for last li */}
+                                <li className={isChildActive('/users') ? 'last-li active' : 'last-li'}><Link href="/users">لیست کارمندان</Link></li>
                             </ul>
                         </li>
                     )}
@@ -185,7 +189,8 @@ function NavBar() {
                                 </svg>محوطه</Link>
                             <ul className={`collapse ${shouldExpandParent('/areas') ? "show" : ""}`} id="areas">
 
-                                <li className={isChildActive('/areas') ? 'active' : ''}><Link href="/areas">لیست محوطه ها</Link></li>
+                                {/* add a margin bottom for last li */}
+                                <li className={isChildActive('/areas') ? 'last-li active' : 'last-li'}><Link href="/areas">لیست محوطه ها</Link></li>
                             </ul>
                         </li>
                     )}

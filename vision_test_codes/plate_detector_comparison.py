@@ -291,8 +291,8 @@ class ComparisonProcessor:
 
 def main():
     # Configuration
-    PLATE_MODEL_PATH = "./vision/ai_models/plate.pt"
-    CHAR_MODEL_PATH = "./vision/ai_models/character.pt"
+    PLATE_MODEL_PATH = "./vision/models/plate/plate.pt"
+    CHAR_MODEL_PATH = "./vision/models/character/character.pt"
     
     # Choose mode
     MODE = "live_comparison"  # "single_comparison" or "live_comparison"
