@@ -1,0 +1,29 @@
+
+# -------------------------
+# Redis / Cache
+# -------------------------
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# -------------------------
+# Django / Application
+# -------------------------
+DJANGO_SECRET_KEY=django-insecure-s4a5(49fnruql0@7i6yp+7o2@cbna**90eo32oxv3j(92#p)+k
+ALLOWED_HOSTS=127.0.0.1,localhost,192.168.100.28
+
+# -------------------------
+# JWT / Authentication
+# -------------------------
+JWT_ACCESS_MINUTES=60
+JWT_REFRESH_HOURS=24
+
+# -------------------------
+# CORS / CSRF
+# -------------------------
+CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000,http://localhost,http://127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000,http://192.168.100.28:3000
+
+# -------------------------
+# bale token
+# -------------------------
+BALE_TOKEN=1343933167:KUDSkTvZ9FCB-XJxwUBREwZ62h-SrpYQGXs
