@@ -1,0 +1,224 @@
+.toastify-container {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.toastify-top-right {
+    top: 60px;
+    right: 10px;
+}
+
+.toastify-top-left {
+    top: 60px;
+    left: 10px;
+}
+
+.toastify-top-center {
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.toastify-bottom-right {
+    bottom: 15px;
+    right: 15px;
+}
+
+.toastify-bottom-left {
+    bottom: 15px;
+    left: 15px;
+}
+
+.toastify-bottom-center {
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.toastify {
+    min-width: 250px;
+    max-width: 350px;
+    text-align: center;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 12px !important;
+    color: white;
+    font-size: var(--font-size, 16px);
+    box-shadow: var(--box-shadow, 0 0.1rem 0.5rem 0 rgba(0, 0, 0, 0.1));
+    cursor: default;
+    animation: slideIn 0.3s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+    background: rgb(var(--primary), 1);
+}
+
+/* Timer/Progress Bar */
+.toastify .timer-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 5px;
+    background-color: rgb(211, 208, 208);
+    width: 100%;
+    animation: timerProgress linear forwards;
+    transform-origin: left;
+    border-radius: 25px !important;
+}
+
+@keyframes timerProgress {
+    0% {
+        transform: scaleX(1);
+    }
+
+    100% {
+        transform: scaleX(0);
+    }
+}
+
+/* Entry Animation */
+.toastify-slide-in {
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toastify-container.toastify-top-left .toastify-slide-in {
+    animation: slideInLeft 0.3s ease-out forwards;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toastify-container.toastify-top-center .toastify-slide-in {
+    animation: slideInDown 0.3s ease-out forwards;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Exit Animation - Smooth fade out */
+.toastify.fade-out {
+    animation: fadeOut 0.3s ease-out forwards !important;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        max-height: 200px;
+        margin-bottom: 10px;
+        padding: 15px 20px;
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.95) translateY(-5px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateY(-10px);
+        max-height: 0;
+        margin-bottom: 0;
+        padding: 0 20px;
+        visibility: hidden;
+    }
+}
+
+/* Different exit animations per position */
+.toastify-container.toastify-top-right .toastify.fade-out {
+    animation: fadeOutRight 0.3s ease-out forwards !important;
+}
+
+@keyframes fadeOutRight {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(100%);
+        visibility: hidden;
+    }
+}
+
+.toastify-container.toastify-top-left .toastify.fade-out {
+    animation: fadeOutLeft 0.3s ease-out forwards !important;
+}
+
+@keyframes fadeOutLeft {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-100%);
+        visibility: hidden;
+    }
+}
+
+.toastify-container.toastify-top-center .toastify.fade-out {
+    animation: fadeOutUp 0.3s ease-out forwards !important;
+}
+
+@keyframes fadeOutUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-100%);
+        visibility: hidden;
+    }
+}
+
+.toastify-container.toastify-bottom-right .toastify.fade-out {
+    animation: fadeOutBottomRight 0.3s ease-out forwards !important;
+}
+
+@keyframes fadeOutBottomRight {
+    0% {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(100%) translateY(20px);
+        visibility: hidden;
+    }
+}

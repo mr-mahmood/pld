@@ -39,7 +39,7 @@ class MotionDetectorMOG2:
         fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel, iterations=2)
         
         # Dilate to fill gaps
-        fgmask = cv2.dilate(fgmask, None, iterations=2)
+        fgmask = cv2.dilate(fgmask, None, iterations=2) # type: ignore
         
         # Calculate motion percentage
         motion_pixels = np.count_nonzero(fgmask)

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import os
 import cv2
 import time
@@ -9,18 +10,19 @@ import traceback
 
 from dotenv import load_dotenv
 from vision.utils import log
-from vision.ai_models.character_detection import CharacterDetector
+from vision.models.character.character_detection import CharacterDetector
 import queue
 
 load_dotenv()
 
 
 class CharacterDetectionWorker(multiprocessing.Process):
-    def __init__(self, stop_event, input_queue, output_queue, worker_id=0):
+    def __init__(self, stop_event, input_queue, output_queue, save_queue, worker_id=0):
         super().__init__(name=f"Character Detection Worker-{worker_id}", daemon=False)
         self.stop_event = stop_event
         self.input_queue = input_queue
         self.output_queue = output_queue
+        self.save_queue = save_queue
         self.worker_id = worker_id
 
         # Per‑gate caches – all use deque with maxlen for automatic eviction
@@ -32,7 +34,7 @@ class CharacterDetectionWorker(multiprocessing.Process):
 
     def run(self) -> None:
         log(self.name, f"Starting Character detector on {os.getenv('DEVICE', 'cpu')} ")
-        log(self.name, f"Starting with min width {int(os.getenv("MIN_WIDTH", 100))} ")
+        log(self.name, f"Starting with min width {int(os.getenv('MIN_WIDTH', 100))} ")
 
         detector = CharacterDetector(
             model_path=os.getenv("CHARACTER_DETECTION_MODEL_PATH"),
@@ -133,10 +135,9 @@ class CharacterDetectionWorker(multiprocessing.Process):
 
         # Pair each non-None result with its original index
         plate_candidates = []   # list of (plate_string, index)
-        log(self.name, f"Raw Plates: {raw_results}")
         for idx, result in enumerate(raw_results):
             if result is not None:
-                plate_candidates.append((result, idx))
+                plate_candidates.append((result["plate"], idx))
 
         if not plate_candidates:
             return
@@ -144,15 +145,48 @@ class CharacterDetectionWorker(multiprocessing.Process):
         # ---- majority vote + find winning index (ONE pass) ----
         final_plate, confidence, winning_idx = self._majority_vote_with_index(plate_candidates)
 
-        # ---- show the reults ----
-        if final_plate is None:
-            cv2.putText(plate, "Plate: None", (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2) # type: ignore
+        # ---- save character data if valid ----
+        if final_plate is not None and confidence >= 0.6 and winning_idx is not None:
+            # Get the winning frame
+            if winning_idx < len(valid_plates):
+                winning_plate_crop = valid_plates[winning_idx]
+                winning_result = raw_results[winning_idx]
+                
+                if winning_result is not None:
+                    char_bboxes = winning_result["bboxes"]
+                    char_class_ids = winning_result["class_ids"]
+                    
+                    if char_bboxes and char_class_ids:
+                        # Encode the padded plate crop to JPEG bytes
+                        _, img_buf = cv2.imencode('.jpg', winning_plate_crop, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                        img_bytes = img_buf.tobytes()
+                        
+                        # Send to character saver
+                        self._add_character_save_task(
+                            image=img_bytes,
+                            gate_id=gate,
+                            bboxes=char_bboxes,
+                            class_ids=char_class_ids
+                        )
+                        
+                        log(self.name, f"Saved {len(char_bboxes)} characters from plate: {final_plate}")
+
+        # ---- show the results ----
+        if winning_idx is not None and winning_idx < len(valid_plates):
+            display_plate = valid_plates[winning_idx]
         else:
-            cv2.putText(plate, f"Plate: {final_plate}", (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2) # type: ignore
-        cv2.imshow('Crop Frame', plate) # type: ignore
-        cv2.waitKey(1)
+            display_plate = valid_plates[0] if valid_plates else None
+
+        if display_plate is not None:
+            if final_plate is None:
+                cv2.putText(display_plate, "Plate: None", (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            else:
+                cv2.putText(display_plate, f"Plate: {final_plate}", (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.imshow('Crop Frame', display_plate)
+            cv2.waitKey(1)
             
             
+        # ---- validate result ----
         if final_plate is None:
             log(self.name, f"Low confidence (or tie) for track {track_id}, discarding")
             return
@@ -240,3 +274,29 @@ class CharacterDetectionWorker(multiprocessing.Process):
             return winner, most_common[0][1] / total, first_idx[winner]
         
         return None, 0.0, None
+    
+    # -----------------------------------------------------------------
+    # put task for character save (multiple bboxes)
+    # -----------------------------------------------------------------
+    def _add_character_save_task(self, image, gate_id, bboxes, class_ids):
+        """
+        Queue character detection data for saving.
+        
+        Args:
+            image: JPEG bytes of the padded plate crop
+            gate_id: Gate identifier
+            bboxes: List of character bounding boxes [x1, y1, x2, y2]
+            class_ids: List of character class IDs
+        """
+        payload = {
+            "image": image,
+            "gate_id": gate_id,
+            "bboxes": bboxes,
+            "class_ids": class_ids,
+            "image_shape": (480, 640),
+        }
+        
+        try:
+            self.save_queue.put(payload, timeout=0.5)
+        except queue.Full:
+            log(self.name, "Character save queue full, dropping sample")

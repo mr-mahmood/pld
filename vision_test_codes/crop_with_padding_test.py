@@ -19,11 +19,11 @@ PLATE_CONFIDENCE_THRESHOLD = 0.5
 CHAR_CONFIDENCE_THRESHOLD = 0.5
 
 # Model paths
-PLATE_MODEL_PATH = "./vision/ai_models/plate.pt"
-CHAR_MODEL_PATH = "./vision/ai_models/character.pt"
+PLATE_MODEL_PATH = "./vision/models/plate/plate.pt"
+CHAR_MODEL_PATH = "./vision/models/character/character.pt"
 
 # Camera settings
-CAMERA_INDEX = 'http://localhost:8080/video'
+CAMERA_INDEX = 0
 
 # Display settings
 MAIN_WINDOW_SCALE = 0.7  # Scale main window (0.5 = half size)

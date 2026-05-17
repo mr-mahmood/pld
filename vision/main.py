@@ -9,7 +9,8 @@ from vision.share_memory import SharedFrameStore
 from vision.camera_worker import gateGroupProcess
 from vision.plate_detection_worker import PlateDetectionWorker
 from vision.character_detection_worker import CharacterDetectionWorker
-from copy import deepcopy
+from vision.models.plate.dataset_saver import SavingProcess
+from vision.models.character.dataset_saver import CharacterSavingProcess
 
 load_dotenv()
 
@@ -110,6 +111,23 @@ def main():
     character_queue = multiprocessing.Queue(maxsize=500)
 
     # -----------------------------------------------
+    # Saving Queues
+    # -----------------------------------------------
+    plate_save_queue = multiprocessing.Queue(maxsize=100)
+    character_save_queue = multiprocessing.Queue(maxsize=100)
+
+    # -----------------------------------------------
+    # Start Saving Processes
+    # -----------------------------------------------
+    plate_saver = SavingProcess(plate_save_queue, stop_event)
+    character_saver = CharacterSavingProcess(character_save_queue, stop_event)
+
+    plate_saver.start()
+    character_saver.start()
+
+    log("Main", "Started saving processes")
+
+    # -----------------------------------------------
     # Start Camera + plate Detection
     # -----------------------------------------------
     camera_processes = []
@@ -136,6 +154,7 @@ def main():
             share_memory=shared_memory,
             stop_event=stop_event,
             queue=plate_queue,
+            save_queue=plate_save_queue,
             worker_id=chunk_id,
             width=WIDTH,
             height=HEIGHT,
@@ -154,6 +173,7 @@ def main():
             stop_event=stop_event,
             input_queue=plate_queue,
             output_queue=character_queue,
+            save_queue=character_save_queue,
             worker_id=i
         )
         worker.start()
@@ -197,6 +217,14 @@ def main():
     # 3️⃣ Stop character workers (producers of embeddings)
     for p in character_processing_workers:
         p.join()
+
+    # 4️⃣ Stop savers
+    plate_saver.join(timeout=3)
+    character_saver.join(timeout=3)
+    if plate_saver.is_alive():
+        plate_saver.terminate()
+    if character_saver.is_alive():
+        character_saver.terminate()
 
     # At this point:
     # NO process can push to character_embedder_queue anymore.

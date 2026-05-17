@@ -146,8 +146,8 @@ def main():
     print("Initializing models...")
     
     # Initialize detectors
-    plate_detector = PlateDetector("./vision/ai_models/plate.pt", confidence_threshold=0.5)
-    char_detector = CharacterDetector("./vision/ai_models/character.pt", confidence_threshold=0.4)
+    plate_detector = PlateDetector("./vision/models/plate/plate.pt", confidence_threshold=0.5)
+    char_detector = CharacterDetector("./vision/models/character/character.pt", confidence_threshold=0.4)
     
     # Gate ID (you can change this or make it configurable)
     GATE_ID = "3"

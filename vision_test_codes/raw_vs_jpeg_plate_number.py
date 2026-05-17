@@ -88,8 +88,8 @@ def resize_with_padding(image, target_w=640, target_h=480):
 # -------------------------------
 def main():
     print("Initializing models...")
-    plate_detector = PlateDetector("./vision/ai_models/plate.pt", confidence_threshold=0.5)
-    char_detector = CharacterDetector("./vision/ai_models/character.pt", confidence_threshold=0.4)
+    plate_detector = PlateDetector("./vision/models/plate/plate.pt", confidence_threshold=0.5)
+    char_detector = CharacterDetector("./vision/models/character/character.pt", confidence_threshold=0.4)
 
     print("Opening webcam at 1920x1080...")
     cap = cv2.VideoCapture(0)

@@ -2,7 +2,7 @@ import cv2
 import torch
 from ultralytics import YOLO
 
-model = YOLO('./vision/ai_models/plate.pt')
+model = YOLO('./vision/models/plate/plate.pt')
 cap = cv2.VideoCapture('http://localhost:8080/video')
 
 if not cap.isOpened():
