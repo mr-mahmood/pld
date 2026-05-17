@@ -50,6 +50,8 @@ export async function robustFetch({
                 headers: { "Content-Type": "application/json" },
                 credentials: 'include',
             });
+            console.log("in the logout function");
+            
         } catch (error) {
             console.error("Error during logout fetch:", error instanceof Error ? error.message : String(error));
         }

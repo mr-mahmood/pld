@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE_URL } from "@/config/index";
 
 import { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
 import { useActiveUser } from "@/src/contexts/active_user_context";
@@ -7,6 +8,7 @@ import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { UserData } from "@/src/types/userData";
 import { log } from "node:console";
+import { ApiResponse } from "@/src/types/RobustFetch";
 
 export default function UserLoginForm() {
   const [employeeNumber, setEmployeeNumber] = useState("");
@@ -83,17 +85,16 @@ export default function UserLoginForm() {
     console.log("request sended");
     
     try {
-      const response = await robustFetch({
-        url: `api/auth/login/`,
+      const response = await fetch(`${API_BASE_URL}/api/auth/login/`,{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        router: router,
       });
-      console.log( "response is:" , response);
+      const data : ApiResponse = await response.json() 
+      console.log( "response is:" , data);
       
-      if (response.success) {
-        const newUser: UserData = response.data.user;
+      if (data.success) {
+        const newUser: UserData = data.data.user;
         setActiveUser(newUser);
         if (newUser.must_change_password) {
           router.prefetch("change-password/");
@@ -103,20 +104,20 @@ export default function UserLoginForm() {
           router.push("/");
         }
       } else {
-        if (response.code === 20) {
+        if (data.code === 20) {
           setPassword("");
           setEmployeeNumber("");
-          console.error("Error while loging in", response.message);
+          console.error("Error while loging in", data.message);
           setErrorMessage("کد پرسنلی یا رمز عبور اشتباه است");
-        } else if (response.code === 100) {
+        } else if (data.code === 100) {
           setPassword("");
           setEmployeeNumber("");
-          console.error("Error while loging in", response.message);
+          console.error("Error while loging in", data.message);
           setErrorMessage("عدم وجود کاربر یا غیرفعال بودن کاربر");
         } else {
           setPassword("");
           setEmployeeNumber("");
-          console.error("Error while loging in", response.message);
+          console.error("Error while loging in", data.message);
           setErrorMessage(
             "خطایی در ارتباط با سرور رخ داد. لطفاً دوباره تلاش کنید",
           );
