@@ -40,12 +40,13 @@ export async function robustFetch({
 }: RobustFetchOptions): Promise<ApiResponse> {
     let attempt = 0;
     let response: Response | undefined = undefined;
-
+    
+    //logout
     const handleLogout = async () => {
         router.prefetch('/login');
         console.log("Logging out and redirecting...");
         try {
-            await fetch(`${API_BASE_URL}/api/auth/logout/`, {
+            await fetch(`${API_BASE_URL}api/auth/logout/`, {
                 method: 'POST',
                 headers: { "Content-Type": "application/json" },
                 credentials: 'include',
@@ -75,8 +76,12 @@ export async function robustFetch({
             if (method === "GET") {
                 delete fetchOptions.body;
             }
+            console.log(`${API_BASE_URL}${url}`);
+            console.log(fetchOptions);
+            
+            
 
-            response = await fetch(`${API_BASE_URL}/${url}`, fetchOptions);
+            response = await fetch(`${API_BASE_URL}${url}`, fetchOptions);
             const data: ApiResponse = await response.json();
             console.log(`Original Responce: ${JSON.stringify(data, null, 2)}`);
 
